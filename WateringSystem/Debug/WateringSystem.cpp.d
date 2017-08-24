@@ -11,4 +11,6 @@ C:\Users\Stefan\AppData\Local\Temp\VMBuilds\WateringSystem\uno\Debug\WateringSys
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/USBAPI.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\variants\standard/pins_arduino.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\Servo\src/servo.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\Servo\src/avr/ServoTimers.h \
  D:\Visual\Common7\IDE\Extensions\t4z2hviz.yjk\Micro\ Platforms\default\debuggers\VM_DBG/VM_DBG.h

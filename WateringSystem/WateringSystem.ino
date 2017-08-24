@@ -8,10 +8,12 @@
 
 //DIO
 bool buttonDuration;
+bool buttonDurationOld;
 bool buttonDryness;
+bool buttonDrynessOld;
 const int waterpin = 3;
 const int buttonDurationpin = 2;
-const int buttonDrynesspin = 2;
+const int buttonDrynesspin = 3;
 int LEDpin[10];
 
 //AIO
@@ -27,9 +29,9 @@ long pumpTimer;
 long modeTimer;
 long looptimer;
 int ledTimer;
-const long timerValue = 20000;
+const long timerValue = 2000;
 const long modeTimeValue = 1000;
-const long loopValue = 10000;
+const long loopValue = 100000;
 const int ledTimerValue = 100;
 
 //misc
@@ -43,6 +45,8 @@ Servo sweeper;
 int plant[3];
 int pos;
 
+long counter;
+
 enum State_enum
 {
 	ST_WAIT,
@@ -54,7 +58,8 @@ enum State_enum
 	ST_DURATION_MODE
 };
 
-void setup() {
+void setup() 
+{
 	Serial.begin(9600);
 
 	for (int i = 0; i < 5; i++)
@@ -73,34 +78,54 @@ void setup() {
 
 
 	sweeper.attach(8);
+
+
 }
 
-void loop() {
+void loop() 
+{
 	switch (state)
 	{
 	case ST_WAIT:
 		looptimer--;
+		pumpTimer = timerValue;
 
 		if (digitalRead(buttonDurationpin))
+		{
 			state = ST_DURATION_MODE;
+			modeTimer = modeTimeValue;
+		}
 		if (digitalRead(buttonDrynesspin))
+		{
 			state = ST_DRYNESS_MODE;
+			modeTimer = modeTimeValue;
+		}
 
 		if (looptimer <= 0)
 		{
 			looptimer = loopValue;
 			state = ST_VALUE_CHECK;
+		}			
+		for (int i = 0; i < 5; i++)
+		{
+			digitalWrite(LEDpin[i], LOW);
 		}
 		break;
 
 	case ST_VALUE_CHECK:
+		counter++;
 		Serial.write("Checking Value \n");
 		soilValue[0] = analogRead(A0);
 		soilValue[1] = analogRead(A1);
 		soilValue[2] = analogRead(A2);
 		bucketValue = analogRead(A5);
-		Serial.print(state);
 
+		Serial.print(counter);
+		Serial.write(": ");
+
+		Serial.print(soilValue[0]);
+		Serial.write("\n");
+		/*
 		for (int i = 0; i < 2; i++)
 		{
 			pos = plant[i];
@@ -113,9 +138,11 @@ void loop() {
 		{
 			state = ST_BUCKET;
 		}
-
-
-		state = ST_WAIT;
+		*/
+		if (soilValue[0] < 0)
+			state = ST_PUMP;
+		else
+			state = ST_WAIT;
 		break;
 
 	case ST_SERVO:
@@ -126,12 +153,19 @@ void loop() {
 
 	case ST_PUMP:
 		Serial.write("Starting pump \n");
-		while (pumpTimer > 0)
+		if (pumpTimer > 0)
 		{
 			digitalWrite(waterpin, HIGH);
+			pumpTimer--;
+
+			Serial.write("\n");
+			Serial.print(pumpTimer);
 		}
-		digitalWrite(waterpin, LOW);
-		state = ST_WAIT;
+		else
+		{
+			digitalWrite(waterpin, LOW);
+			state = ST_WAIT;
+		}
 		break;
 
 	case ST_BUCKET:
@@ -184,28 +218,42 @@ void loop() {
 		break;
 
 	case ST_DURATION_MODE:
-		modeTimer = modeTimeValue;
-		while (modeTimer == 0)
+		Serial.print(modeDuration);
+		Serial.write("\n");
+		buttonDuration = digitalRead(buttonDurationpin);
+		if (modeTimer > 0)
 		{
-			if (digitalRead(buttonDurationpin))
+			if (buttonDuration != buttonDurationOld)
 			{
-				if (modeDuration == 4)
-					modeDuration = 0;
-				else
-					modeDuration++;
-				modeTimer = modeTimeValue;
+				if (buttonDuration == HIGH)
+				{
+					if (modeDuration == 4)
+						modeDuration = 0;
+					else
+						modeDuration++;
+
+					modeTimer = modeTimeValue;
+				}
 			}
 
-			for (int i = 0; i < 5; i++)
+			buttonDurationOld = buttonDuration;
+			for (int i = 0; i < modeDuration; i++)
 			{
-				if (i != modeDuration)
+
+				digitalWrite(LEDpin[i], HIGH);
+				/*if (i != modeDuration)
 					digitalWrite(LEDpin[i], LOW);
-				else
-					digitalWrite(LEDpin[i], HIGH);
+					else
+					digitalWrite(LEDpin[i], HIGH);*/
 			}
+
+			
 
 			modeTimer--;
 		}
+		else
+			state = ST_WAIT;
+
 		break;
 	}
 }
